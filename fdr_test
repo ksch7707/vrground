@@ -1,0 +1,202 @@
+import FinanceDataReader as Fdr
+import pandas as pd
+def get_stock_index(start_date, end_data):
+    start_day = str(start_date).replace('-', '', 2)[0:8]
+    end_day = str(end_data).replace('-', '', 2)[0:8]
+    # Kospi
+    kospi_tb = Fdr.DataReader('KS11', start_day, end_day)
+
+    kospi_tb.rename(columns={
+        'Close': 'kospi_Close',
+        'Open': 'kospi_Open',
+        'High': 'kospi_High',
+        'Low': 'kospi_Low',
+        'Volume': 'kospi_volume'}, inplace=True)
+
+    # 나중에 코스피 해당일만 추출하기 위해 승강힘만 따로 저장해 둔다.
+    kospi_pw = kospi_tb.loc[:, 'Change'] * kospi_tb.loc[:, 'kospi_volume']
+
+    # series를 Dataframe 으로 변화시켜 줘야 merge 를 할 수 있다.
+    kospi_pw = pd.DataFrame(kospi_pw, columns=['kospi_UD_pw'])
+    # print(kospi_pw)
+
+    # kospi_tb.to_excel("D:\\codedata\\kospi_tb0.xlsx")
+    # DJI	다우존스 지수
+    # IXIC	나스닥 지수
+    # US500	S&P 500 지수
+    # VIX	S&P 500 VIX
+
+    # S&P500
+    df1 = Fdr.DataReader('US500', start_day, end_day)
+    df1['SnP500'] = df1.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+
+    df1['SnP500_UD_pw'] = df1.loc[:, 'Change']
+    # df1.to_excel("D:\\codedata\\SnP500.xlsx")
+    df1.drop(columns=['Close', 'Open', 'High', 'Low', 'Volume', 'Change'], axis=1, inplace=True)
+
+    # VIX
+    df2 = Fdr.DataReader('VIX', start_day)
+    # df2.to_excel("D:\\sdata\\df2.xlsx")
+    df2['VIX'] = df2.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df2['VIX_UD_pw'] = df2.loc[:, 'Change']
+    # df2.to_excel("D:\\codedata\\VIX.xlsx")
+    df2.drop(columns=['Close', 'Open', 'High', 'Low', 'Volume', 'Change'], axis=1, inplace=True)
+
+    # DJI	다우존스 지수
+    df3 = Fdr.DataReader('DJI', start_day, end_day)
+    # df3.to_excel("D:\\sdata\\df3.xlsx")
+    df3['Dow_J'] = df3.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df3['Dow_J_UD_pw'] = df3.loc[:, 'Change'] * df3.loc[:, 'Volume']
+    # df3.to_excel("D:\\codedata\\Dow_J.xlsx")
+    df3.drop(columns=['Close', 'Open', 'High', 'Low', 'Volume', 'Change'], axis=1, inplace=True)
+
+    # IXIC	나스닥 지수
+    df4 = Fdr.DataReader('IXIC', start_day, end_day)
+    # df4.to_excel("D:\\sdata\\df4.xlsx")
+    df4['NASDAQ'] = df4.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df4['NASDAQ_pw'] = df4.loc[:, 'Change'] * df4.loc[:, 'Volume']
+    # df4.to_excel("D:\\codedata\\NASDAQ.xlsx")
+    df4.drop(columns=['Close', 'Open', 'High', 'Low', 'Volume', 'Change'], axis=1, inplace=True)
+
+    df5 = Fdr.DataReader('USD/KRW', start_day, end_day)
+    # df5.to_excel("D:\\sdata\\df5.xlsx")
+    df5['USD/KRW'] = df5.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df5.drop(columns=['Close', 'Open', 'High', 'Low', 'Change'], axis=1, inplace=True)
+
+    df6 = Fdr.DataReader('CNY/KRW', start_day, end_day)
+    # df6.to_excel("D:\\sdata\\df6.xlsx")
+    df6['CNY/KRW'] = df6.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df6.drop(columns=['Close', 'Open', 'High', 'Low', 'Change'], axis=1, inplace=True)
+
+    df7 = Fdr.DataReader('JPY/KRW', start_day, end_day)
+    # df7.to_excel("D:\\sdata\\df7.xlsx")
+    df7['JPY/KRW'] = df7.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df7.drop(columns=['Close', 'Open', 'High', 'Low', 'Change'], axis=1, inplace=True)
+
+    # df1.to_excel("D:\\sdata\\df1.xlsx")
+    kospi_tb = pd.merge(kospi_tb, df1, on='Date', how='left', sort=False)
+    kospi_tb = pd.merge(kospi_tb, df2, on='Date', how='left', sort=False)
+    kospi_tb = pd.merge(kospi_tb, df3, on='Date', how='left', sort=False)
+    kospi_tb = pd.merge(kospi_tb, df4, on='Date', how='left', sort=False)
+    kospi_tb = pd.merge(kospi_tb, df5, on='Date', how='left', sort=False)
+    kospi_tb = pd.merge(kospi_tb, df6, on='Date', how='left', sort=False)
+    kospi_tb = pd.merge(kospi_tb, df7, on='Date', how='left', sort=False)
+
+    df1 = Fdr.DataReader('KR10YT=RR', start_date, end_day)  # 10년만기 한국국채 수익률
+    df1['KR10YT'] = df1.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df1.drop(columns=['Close', 'Open', 'High', 'Low', 'Change'], axis=1, inplace=True)
+    kospi_tb = pd.merge(kospi_tb, df1, on='Date', how='left', sort=False)
+
+    df1 = Fdr.DataReader('KR2YT=RR', start_date, end_day)  # 1년만기 한국국채 수익률
+    df1['KR2YT'] = df1.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df1.drop(columns=['Close', 'Open', 'High', 'Low', 'Change'], axis=1, inplace=True)
+    kospi_tb = pd.merge(kospi_tb, df1, on='Date', how='left', sort=False)
+
+    df1 = Fdr.DataReader('KR1YT=RR', start_date, end_day)  # 1년만기 한국국채 수익률
+    df1['KR1YT'] = df1.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df1.drop(columns=['Close', 'Open', 'High', 'Low', 'Change'], axis=1, inplace=True)
+    kospi_tb = pd.merge(kospi_tb, df1, on='Date', how='left', sort=False)
+
+    df1 = Fdr.DataReader('US10YT=X', start_date, end_day)  # 10년만기 미국국채 수익률
+    df1['US10YT'] = df1.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df1.drop(columns=['Close', 'Open', 'High', 'Low', 'Change'], axis=1, inplace=True)
+    kospi_tb = pd.merge(kospi_tb, df1, on='Date', how='left', sort=False)
+
+    df1 = Fdr.DataReader('US2YT=X', start_date, end_day)  # 2년만기 미국국채 수익률
+    df1['US2YT'] = df1.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df1.drop(columns=['Close', 'Open', 'High', 'Low', 'Change'], axis=1, inplace=True)
+    kospi_tb = pd.merge(kospi_tb, df1, on='Date', how='left', sort=False)
+
+    df1 = Fdr.DataReader('US1MT=X', start_date, end_day)  # 1개월만기 미국국채 수익률
+    df1['US1MT'] = df1.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df1.drop(columns=['Close', 'Open', 'High', 'Low', 'Change'], axis=1, inplace=True)
+    kospi_tb = pd.merge(kospi_tb, df1, on='Date', how='left', sort=False)
+
+    # DX	Dollar Index
+    df1 = Fdr.DataReader('DX', start_day, end_day, exchange='ICE')  # Dollar Index 선물 (ICE)
+
+    df1['DX'] = df1.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df1['DX_pw'] = df1.loc[:, 'Change'] * df1.loc[:, 'Volume']
+    df1.drop(columns=['Close', 'Open', 'High', 'Low', 'Volume', 'Change'], axis=1, inplace=True)
+    kospi_tb = pd.merge(kospi_tb, df1, on='Date', how='left', sort=False)
+
+    # WTI 유가 선물
+    df1 = Fdr.DataReader('T', start_day, end_day, exchange='ICE')  # WTI 유가 선물 (ICE)
+
+    df1['WTI'] = df1.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df1['WTI_pw'] = df1.loc[:, 'Change'] * df1.loc[:, 'Volume']
+    df1.drop(columns=['Close', 'Open', 'High', 'Low', 'Volume', 'Change'], axis=1, inplace=True)
+    kospi_tb = pd.merge(kospi_tb, df1, on='Date', how='left', sort=False)
+
+    # NG 천연가스 선물
+    df1 = Fdr.DataReader('NG', start_day, end_day, exchange='NYMEX')  # NG 천연가스 선물 (NYMEX)
+    df1['NG'] = df1.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df1['NG_pw'] = df1.loc[:, 'Change'] * df1.loc[:, 'Volume']
+    df1.drop(columns=['Close', 'Open', 'High', 'Low', 'Volume', 'Change'], axis=1, inplace=True)
+    kospi_tb = pd.merge(kospi_tb, df1, on='Date', how='left', sort=False)
+
+    # ZG Gold 선물
+    df1 = Fdr.DataReader('ZG', start_day, end_day, exchange='ICE')  # ZG Gold 선물 (ICE)
+    df1['Gold'] = df1.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df1['Gold_pw'] = df1.loc[:, 'Change'] * df1.loc[:, 'Volume']
+    df1.drop(columns=['Close', 'Open', 'High', 'Low', 'Volume', 'Change'], axis=1, inplace=True)
+    kospi_tb = pd.merge(kospi_tb, df1, on='Date', how='left', sort=False)
+
+    # ZI Silver 선물
+    df1 = Fdr.DataReader('ZI', start_day, end_day, exchange='ICE')  # ZG Gold 선물 (ICE)
+    df1['Silver'] = df1.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df1['Silver_pw'] = df1.loc[:, 'Change'] * df1.loc[:, 'Volume']
+    df1.drop(columns=['Close', 'Open', 'High', 'Low', 'Volume', 'Change'], axis=1, inplace=True)
+    kospi_tb = pd.merge(kospi_tb, df1, on='Date', how='left', sort=False)
+
+    # HG 구리 선물 (COMEX)
+    df1 = Fdr.DataReader('HG', start_day, end_day, exchange='COMEX')  # 구리 선물 (COMEX)
+    df1['Copper'] = df1.loc[:, ['Close', 'Open', 'High', 'Low']].mean(axis=1)
+    df1['Copper_pw'] = df1.loc[:, 'Change'] * df1.loc[:, 'Volume']
+    df1.drop(columns=['Close', 'Open', 'High', 'Low', 'Volume', 'Change'], axis=1, inplace=True)
+    kospi_tb = pd.merge(kospi_tb, df1, on='Date', how='left', sort=False)
+
+    # 하이일드 채권 스프레드 (BAMLH0A0HYM2)
+    df1 = Fdr.DataReader('BAMLH0A0HYM2', start=start_day, end=end_day, data_source='fred')
+    # df1.rename(columns={'BAMLH0A0HYM': 'sp_bond'}, index={'DATE': 'Date'}, inplace=True)
+    df1.columns = ["bond_sp"]
+    # print(kospi_tb)
+    kospi_tb = pd.merge(kospi_tb, df1, left_index=True, right_index=True, how='left', sort=False)
+
+    # 실업률 (UNRATE)는 휴일에만 데이타가 존재한다. 그러므로 outer 로 merge 한다.
+    df1 = Fdr.DataReader('UNRATE', start=start_day, end=end_day, data_source='fred')
+    kospi_tb = pd.merge(kospi_tb, df1, left_index=True, right_index=True, how='outer', sort=False)
+
+    # 주택 판매 지수 (HSN1F)는 휴일에만 데이타가 존재한다. 그러므로 outer 로 merge 한다.
+    df1 = Fdr.DataReader('HSN1F', start=start_day, end=end_day, data_source='fred')
+    kospi_tb = pd.merge(kospi_tb, df1, left_index=True, right_index=True, how='outer', sort=False)
+
+    # 소비자심리지수 (UMCSENT) 는 휴일에만 데이타가 존재한다. 그러므로 outer 로 merge 한다.
+    df1 = Fdr.DataReader('UMCSENT', start=start_day, end=end_day, data_source='fred')
+    kospi_tb = pd.merge(kospi_tb, df1, left_index=True, right_index=True, how='outer', sort=False)
+
+    # 주간 실업수당 청구 건수 (ICSA) 는 휴일에만 데이타가 존재한다. 그러므로 outer 로 merge 한다.
+    df1 = Fdr.DataReader(['ICSA'], start=start_day, end=end_day, data_source='fred')
+    kospi_tb = pd.merge(kospi_tb, df1, left_index=True, right_index=True, how='outer', sort=False)
+
+    # 연속 실업수당청구 건수 CCSA 는 휴일에만 데이타가 존재한다. 그러므로 outer 로 merge 한다.
+    df1 = Fdr.DataReader('CCSA', start=start_day, end=end_day, data_source='fred')
+    kospi_tb = pd.merge(kospi_tb, df1, left_index=True, right_index=True, how='outer', sort=False)
+
+    # kospi_tb = kospi_tb.loc[kospi_tb['Date'] <= pd.to_datetime(end_day, format='%Y%m%d'), :]
+
+    # print(s_date, e_date, kospi_tb)
+    kospi_tb.fillna(method='ffill', axis='index', inplace=True)
+    kospi_tb.fillna(method='bfill', axis='index', inplace=True)
+
+    # 코스피 휴일 날짜들은 저장해 두었던 코스피 승강힘과 inner 조인으로 삭제 시킨다.
+    kospi_tb = pd.merge(kospi_tb, kospi_pw, left_index=True, right_index=True, how='inner', sort=False)
+
+    kospi_tb.reset_index(level=0, inplace=True)
+    kospi_tb.rename(columns={'index': 'Date', 'BAMLH0A0HYM2': 'bond_sp'}, inplace=True)
+
+    # kospi_tb.dropna(inplace=True)
+    # kospi_tb.to_excel("D:\\codedata\\kospi_tb.xlsx")
+    return kospi_tb
+df = get_stock_index('20220302', '20220314')
+print(df)
